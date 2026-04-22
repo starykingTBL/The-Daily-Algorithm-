@@ -1,0 +1,65 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Interactions from '../../components/Interactions.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog', ({ data }) => !data.draft);
+  return posts.map((post) => ({ params: { slug: post.slug }, props: post }));
+}
+
+const post = Astro.props;
+const { Content } = await post.render();
+
+function fmt(d: Date) {
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+---
+<BaseLayout title={post.data.title} description={post.data.description} image={post.data.image}>
+  <article class="max-w-3xl mx-auto px-4 sm:px-6 py-12">
+
+    <!-- Header -->
+    <header class="mb-10">
+      <div class="flex flex-wrap gap-1.5 mb-4">
+        {post.data.tags.map((tag) => (
+          <span class="text-[11px] font-medium px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
+            {tag}
+          </span>
+        ))}
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-gray-950 dark:text-zinc-50 leading-tight mb-4">
+        {post.data.title}
+      </h1>
+      <p class="text-base sm:text-lg text-gray-500 dark:text-zinc-400 leading-relaxed mb-7">
+        {post.data.description}
+      </p>
+      <div class="flex items-center gap-3 pt-5 border-t border-gray-200 dark:border-zinc-800">
+        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-violet-500
+                    flex items-center justify-center text-white text-sm font-bold shrink-0">
+          {post.data.author.charAt(0).toUpperCase()}
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-gray-900 dark:text-zinc-100">{post.data.author}</p>
+          <time class="text-xs text-gray-400 dark:text-zinc-500" datetime={post.data.pubDate.toISOString()}>
+            {fmt(post.data.pubDate)}
+          </time>
+        </div>
+      </div>
+    </header>
+
+    {post.data.image && (
+      <div class="mb-10 rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-800">
+        <img src={post.data.image} alt={post.data.title} class="w-full h-auto" />
+      </div>
+    )}
+
+    <!-- Body -->
+    <div class="tda-prose max-w-none">
+      <Content />
+    </div>
+
+    <!-- Reactions + Comments -->
+    <Interactions slug={post.slug} />
+
+  </article>
+</BaseLayout>
