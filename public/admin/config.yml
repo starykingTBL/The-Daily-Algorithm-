@@ -1,0 +1,26 @@
+backend:
+  name: github
+  repo: YOUR_GITHUB_USERNAME/the-daily-algorithm   # ← change this
+  branch: main
+  auth_type: implicit
+  app_id: YOUR_GITHUB_OAUTH_CLIENT_ID              # ← change this
+
+# Where uploaded images go
+media_folder:  "public/images/blog"
+public_folder: "/images/blog"
+
+collections:
+  - name:   "blog"
+    label:  "Blog Posts"
+    folder: "src/content/blog"
+    create: true
+    slug:   "{{slug}}"
+    fields:
+      - { label: "Title",          name: "title",       widget: "string"                             }
+      - { label: "Description",    name: "description", widget: "text"                               }
+      - { label: "Publish Date",   name: "pubDate",     widget: "datetime"                           }
+      - { label: "Author",         name: "author",      widget: "string",   default: "The Daily Algorithm" }
+      - { label: "Tags",           name: "tags",        widget: "list",     default: []              }
+      - { label: "Featured Image", name: "image",       widget: "image",    required: false          }
+      - { label: "Draft",          name: "draft",       widget: "boolean",  default: false           }
+      - { label: "Body",
