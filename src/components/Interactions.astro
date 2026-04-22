@@ -1,0 +1,229 @@
+---
+interface Props { slug: string; }
+const { slug } = Astro.props;
+const EMOJIS = ['🔥', '💡', '👏', '🤔'];
+---
+
+<section
+  class="interactions-root mt-14 pt-10 border-t border-gray-200 dark:border-zinc-800"
+  data-slug={slug}
+  aria-label="Article reactions and comments"
+>
+
+  <!-- ── Reactions ──────────────────────────────── -->
+  <div class="mb-12">
+    <p class="text-[11px] font-semibold tracking-[0.12em] uppercase text-gray-400 dark:text-zinc-500 mb-4">
+      Reactions
+    </p>
+    <div class="flex flex-wrap gap-2">
+      {EMOJIS.map((emoji) => (
+        <button
+          class="reaction-btn
+                 flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium
+                 border border-gray-200 dark:border-zinc-700
+                 bg-white dark:bg-zinc-900
+                 text-gray-600 dark:text-zinc-300
+                 hover:border-blue-400 dark:hover:border-blue-500
+                 hover:bg-blue-50 dark:hover:bg-blue-950/30
+                 active:scale-95 transition-all"
+          data-emoji={emoji}
+          aria-label={`React with ${emoji}`}
+          type="button"
+        >
+          <span class="text-base leading-none">{emoji}</span>
+          <span class="reaction-count tabular-nums text-gray-400 dark:text-zinc-500 text-xs">—</span>
+        </button>
+      ))}
+    </div>
+  </div>
+
+  <!-- ── Comments ──────────────────────────────── -->
+  <div>
+    <p class="text-[11px] font-semibold tracking-[0.12em] uppercase text-gray-400 dark:text-zinc-500 mb-5">
+      Discussion
+    </p>
+
+    <!-- Form -->
+    <div class="bg-gray-50 dark:bg-zinc-900 rounded-xl p-4 border border-gray-200 dark:border-zinc-800 mb-6">
+      <div class="space-y-3">
+        <input
+          id="c-name"
+          type="text"
+          placeholder="Your name"
+          maxlength="60"
+          autocomplete="off"
+          spellcheck="false"
+          class="tda-field"
+        />
+        <textarea
+          id="c-message"
+          placeholder="Share your thoughts…"
+          rows="3"
+          maxlength="500"
+          class="tda-field resize-none"
+        ></textarea>
+        <div class="flex items-center justify-between min-h-[20px]">
+          <p id="c-status" class="text-xs hidden" aria-live="polite"></p>
+          <button
+            id="c-submit"
+            type="button"
+            class="ml-auto px-4 py-2 rounded-lg text-sm font-medium text-white
+                   bg-blue-600 hover:bg-blue-700 active:bg-blue-800
+                   disabled:opacity-50 disabled:cursor-not-allowed
+                   focus-visible:outline-none focus-visible:ring-2
+                   focus-visible:ring-blue-500 focus-visible:ring-offset-2
+                   dark:focus-visible:ring-offset-zinc-900
+                   transition-colors"
+          >
+            Post Comment
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- List -->
+    <div id="c-list" class="space-y-3" aria-live="polite">
+      <!-- Spinner -->
+      <div id="c-loading" class="flex justify-center py-10">
+        <span class="w-5 h-5 rounded-full border-2 border-gray-200 dark:border-zinc-700 border-t-blue-500 animate-spin block"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { createClient } from '@supabase/supabase-js';
+
+  const root    = document.querySelector('.interactions-root') as HTMLElement;
+  const slug    = root?.dataset.slug ?? '';
+
+  const sb = createClient(
+    import.meta.env.PUBLIC_SUPABASE_URL,
+    import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
+  );
+
+  /* ── helpers ──────────────────────────────────────── */
+  function esc(s: string) {
+    return s
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function fmtDate(iso: string) {
+    return new Date(iso).toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric',
+    });
+  }
+
+  /* ── reactions ────────────────────────────────────── */
+  async function loadReactions() {
+    const { data } = await sb
+      .from('reactions')
+      .select('emoji')
+      .eq('article_slug', slug);
+
+    const counts: Record<string, number> = {};
+    (data ?? []).forEach(({ emoji }) => { counts[emoji] = (counts[emoji] ?? 0) + 1; });
+
+    document.querySelectorAll<HTMLButtonElement>('.reaction-btn').forEach((btn) => {
+      const emoji = btn.dataset.emoji ?? '';
+      const el    = btn.querySelector('.reaction-count')!;
+      el.textContent = String(counts[emoji] ?? 0);
+    });
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('.reaction-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const emoji   = btn.dataset.emoji!;
+      const countEl = btn.querySelector('.reaction-count')!;
+      // Optimistic UI
+      countEl.textContent = String(Number(countEl.textContent) + 1);
+      await sb.from('reactions').insert({ article_slug: slug, emoji });
+    });
+  });
+
+  loadReactions();
+
+  /* ── comments ─────────────────────────────────────── */
+  function commentCard(c: { id: string; name: string; message: string; created_at: string }) {
+    const initial = esc(c.name).charAt(0).toUpperCase();
+    return `
+      <div class="flex gap-3 p-4 rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-violet-500
+                    flex items-center justify-center text-white text-sm font-semibold shrink-0">
+          ${initial}
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-baseline gap-2 mb-1">
+            <span class="text-sm font-semibold text-gray-900 dark:text-zinc-100">${esc(c.name)}</span>
+            <span class="text-xs text-gray-400 dark:text-zinc-500">${fmtDate(c.created_at)}</span>
+          </div>
+          <p class="text-sm text-gray-700 dark:text-zinc-300 break-words leading-relaxed">${esc(c.message)}</p>
+        </div>
+      </div>
+    `;
+  }
+
+  async function loadComments() {
+    const loading = document.getElementById('c-loading');
+    const list    = document.getElementById('c-list')!;
+
+    const { data } = await sb
+      .from('comments')
+      .select('id, name, message, created_at')
+      .eq('article_slug', slug)
+      .eq('approved', true)
+      .order('created_at', { ascending: false });
+
+    loading?.remove();
+
+    if (!data || data.length === 0) {
+      list.innerHTML = `
+        <p class="text-sm text-gray-400 dark:text-zinc-500 text-center py-8">
+          No comments yet. Be the first to share your thoughts.
+        </p>`;
+      return;
+    }
+
+    list.innerHTML = data.map(commentCard).join('');
+  }
+
+  loadComments();
+
+  /* ── submit ───────────────────────────────────────── */
+  const nameEl   = document.getElementById('c-name')    as HTMLInputElement;
+  const msgEl    = document.getElementById('c-message') as HTMLTextAreaElement;
+  const submitEl = document.getElementById('c-submit')  as HTMLButtonElement;
+  const statusEl = document.getElementById('c-status')!;
+
+  function setStatus(msg: string, ok: boolean) {
+    statusEl.textContent  = msg;
+    statusEl.className    = `text-xs ${ok ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`;
+    statusEl.classList.remove('hidden');
+    if (ok) setTimeout(() => statusEl.classList.add('hidden'), 5000);
+  }
+
+  submitEl.addEventListener('click', async () => {
+    const name    = nameEl.value.trim();
+    const message = msgEl.value.trim();
+
+    if (!name || name.length < 2) { setStatus('Name must be at least 2 characters.', false); return; }
+    if (!message)                  { setStatus('Please write a message.', false); return; }
+
+    submitEl.disabled       = true;
+    submitEl.textContent    = 'Posting…';
+
+    const { error } = await sb.from('comments').insert({ article_slug: slug, name, message });
+
+    submitEl.disabled    = false;
+    submitEl.textContent = 'Post Comment';
+
+    if (error) {
+      setStatus('Something went wrong. Please try again.', false);
+    } else {
+      nameEl.value = '';
+      msgEl.value  = '';
+      setStatus('✓ Comment submitted — it will appear after review.', true);
+    }
+  });
+</script>
