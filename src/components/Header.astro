@@ -1,0 +1,180 @@
+---
+const navLinks = [
+  { href: '/',           label: 'Home'       },
+  { href: '/about',      label: 'About'      },
+  { href: '/privacy',    label: 'Privacy'    },
+  { href: '/disclaimer', label: 'Disclaimer' },
+];
+const path = Astro.url.pathname;
+---
+
+<header
+  class="sticky top-0 z-50 h-14
+         bg-white/75 dark:bg-[#0a0a0a]/75
+         backdrop-blur-md backdrop-saturate-150
+         border-b border-gray-200/80 dark:border-zinc-800/80"
+>
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 h-full flex items-center justify-between">
+
+    <!-- ── Logo ── -->
+    <a
+      href="/"
+      class="flex items-center gap-2.5 group select-none"
+      aria-label="The Daily Algorithm – Home"
+    >
+      <div
+        class="w-7 h-7 rounded-md bg-blue-600 flex items-center justify-center
+               ring-1 ring-blue-500/40 shrink-0"
+      >
+        <span class="font-mono text-[10px] font-bold text-white tracking-tight">TDA</span>
+      </div>
+      <span
+        class="hidden sm:block font-semibold text-[13px] tracking-tight
+               text-gray-900 dark:text-zinc-50
+               group-hover:text-blue-600 dark:group-hover:text-blue-400
+               transition-colors"
+      >
+        The Daily Algorithm
+      </span>
+    </a>
+
+    <!-- ── Right side ── -->
+    <div class="flex items-center gap-1">
+
+      <!-- Desktop nav (≥ md) -->
+      <nav class="hidden md:flex items-center gap-0.5 mr-1" aria-label="Main navigation">
+        {navLinks.map(({ href, label }) => (
+          <a
+            href={href}
+            class={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors ${
+              path === href
+                ? 'text-gray-950 dark:text-zinc-50 bg-gray-100 dark:bg-zinc-800'
+                : 'text-gray-500 dark:text-zinc-400 hover:text-gray-950 dark:hover:text-zinc-50 hover:bg-gray-100 dark:hover:bg-zinc-800/70'
+            }`}
+          >
+            {label}
+          </a>
+        ))}
+      </nav>
+
+      <!-- Three-dot menu -->
+      <div class="relative" id="tda-menu-wrap">
+        <button
+          id="tda-menu-btn"
+          aria-label="Open menu"
+          aria-expanded="false"
+          aria-haspopup="true"
+          aria-controls="tda-dropdown"
+          class="w-8 h-8 rounded-md flex flex-col items-center justify-center gap-[3.5px]
+                 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+        >
+          <span class="w-[3.5px] h-[3.5px] rounded-full bg-gray-500 dark:bg-zinc-400 block"></span>
+          <span class="w-[3.5px] h-[3.5px] rounded-full bg-gray-500 dark:bg-zinc-400 block"></span>
+          <span class="w-[3.5px] h-[3.5px] rounded-full bg-gray-500 dark:bg-zinc-400 block"></span>
+        </button>
+
+        <!-- Dropdown -->
+        <div
+          id="tda-dropdown"
+          role="menu"
+          class="hidden animate-fadeIn
+                 absolute right-0 mt-2 w-52
+                 bg-white dark:bg-zinc-900
+                 rounded-xl border border-gray-200 dark:border-zinc-700/70
+                 shadow-2xl shadow-gray-300/40 dark:shadow-black/60
+                 overflow-hidden"
+        >
+          <!-- Theme toggle row -->
+          <div class="px-3.5 py-3.5 border-b border-gray-100 dark:border-zinc-800">
+            <p
+              class="text-[10px] font-semibold tracking-[0.1em] uppercase
+                     text-gray-400 dark:text-zinc-500 mb-2.5"
+            >
+              Appearance
+            </p>
+            <div class="flex items-center justify-between">
+              <span
+                id="tda-theme-label"
+                class="text-sm font-medium text-gray-700 dark:text-zinc-200"
+              >Light</span>
+
+              <button
+                id="tda-theme-toggle"
+                role="switch"
+                aria-checked="false"
+                aria-label="Toggle dark mode"
+                class="relative w-10 h-[22px] rounded-full
+                       bg-gray-200 dark:bg-blue-600
+                       transition-colors duration-200
+                       focus-visible:outline-none focus-visible:ring-2
+                       focus-visible:ring-blue-500 focus-visible:ring-offset-2
+                       dark:focus-visible:ring-offset-zinc-900"
+              >
+                <span
+                  class="absolute top-[3px] left-[3px] w-4 h-4 rounded-full
+                         bg-white shadow-sm
+                         transition-transform duration-200
+                         dark:translate-x-[18px]"
+                ></span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Nav links (always visible on mobile, also desktop) -->
+          <div class="py-1.5" role="none">
+            {navLinks.map(({ href, label }) => (
+              <a
+                href={href}
+                role="menuitem"
+                class={`flex items-center px-3.5 py-2 text-sm font-medium transition-colors ${
+                  path === href
+                    ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30'
+                    : 'text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800'
+                }`}
+              >
+                {label}
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<script>
+  // ── Menu open / close ──────────────────────────────
+  const wrap = document.getElementById('tda-menu-wrap')!;
+  const btn  = document.getElementById('tda-menu-btn')!;
+  const drop = document.getElementById('tda-dropdown')!;
+
+  function openMenu()  { drop.classList.remove('hidden'); btn.setAttribute('aria-expanded', 'true');  }
+  function closeMenu() { drop.classList.add('hidden');    btn.setAttribute('aria-expanded', 'false'); }
+  function toggleMenu(e: Event) { e.stopPropagation(); drop.classList.contains('hidden') ? openMenu() : closeMenu(); }
+
+  btn.addEventListener('click', toggleMenu);
+  document.addEventListener('click', (e) => { if (!wrap.contains(e.target as Node)) closeMenu(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
+
+  // ── Theme toggle ───────────────────────────────────
+  const toggle = document.getElementById('tda-theme-toggle')!;
+  const label  = document.getElementById('tda-theme-label')!;
+
+  function isDark()  { return document.documentElement.classList.contains('dark'); }
+
+  function syncUI() {
+    const dark = isDark();
+    label.textContent = dark ? 'Dark' : 'Light';
+    toggle.setAttribute('aria-checked', String(dark));
+  }
+
+  function applyTheme(dark: boolean) {
+    document.documentElement.classList.toggle('dark', dark);
+    localStorage.setItem('tda-theme', dark ? 'dark' : 'light');
+    syncUI();
+  }
+
+  syncUI(); // initialise toggle state to match current theme
+
+  toggle.addEventListener('click', () => applyTheme(!isDark()));
+</script>
