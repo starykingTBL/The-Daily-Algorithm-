@@ -1,11 +1,10 @@
 backend:
   name: github
-  repo: StarykingTBL/the-daily-algorithm   # ← change this
+  repo: StarykingTBL/the-daily-algorithm
   branch: main
   auth_type: implicit
-  app_id: Ov23lih2FcpzGEUAFncb              # ← change this
+  app_id: Ov23lih2FcpzGEUAFncb
 
-# Where uploaded images go
 media_folder:  "public/images/blog"
 public_folder: "/images/blog"
 
@@ -23,4 +22,4 @@ collections:
       - { label: "Tags",           name: "tags",        widget: "list",     default: []              }
       - { label: "Featured Image", name: "image",       widget: "image",    required: false          }
       - { label: "Draft",          name: "draft",       widget: "boolean",  default: false           }
-      - { label: "Body",
+      - { label: "Body",           name: "body",        widget: "markdown"                           }
