@@ -12,7 +12,7 @@ export default async function handler(req, res) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept':       'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify({
           client_id:     process.env.GITHUB_CLIENT_ID,
@@ -34,54 +34,27 @@ export default async function handler(req, res) {
     const provider = 'github';
     const siteUrl  = process.env.SITE_URL;
 
-    const html = `
-<!doctype html>
+    // Store token in localStorage then redirect to /admin/
+    const html = `<!doctype html>
 <html>
 <head><title>Authenticating…</title></head>
 <body>
-<p style="font-family:system-ui;text-align:center;margin-top:4rem;color:#555">
-  Completing login, please wait…
+<p style="font-family:system-ui;font-size:14px;text-align:center;margin-top:4rem;color:#666">
+  Logging you in…
 </p>
 <script>
-  (function () {
-    var token    = "${token}";
-    var provider = "${provider}";
-    var siteUrl  = "${siteUrl}";
-
-    var message = "authorization:" + provider + ":success:"
-      + JSON.stringify({ token: token, provider: provider });
-
-    // Method 1: postMessage to opener (desktop browsers)
-    function tryOpener() {
-      if (window.opener) {
-        window.opener.postMessage("authorizing:" + provider, "*");
-        setTimeout(function () {
-          window.opener.postMessage(message, siteUrl);
-          setTimeout(function () { window.close(); }, 500);
-        }, 300);
-        return true;
-      }
-      return false;
-    }
-
-    // Method 2: localStorage + redirect (mobile browsers)
-    function tryLocalStorage() {
-      try {
-        localStorage.setItem("decap-cms-auth", JSON.stringify({
-          token:    token,
-          provider: provider,
-          ts:       Date.now()
-        }));
-        window.location.href = siteUrl + "/admin/";
-      } catch (e) {
-        document.body.innerHTML =
-          "<p style='font-family:system-ui;text-align:center;margin-top:4rem;color:red'>" +
-          "Auth failed. Please try again.</p>";
-      }
-    }
-
-    if (!tryOpener()) {
-      tryLocalStorage();
+  (function() {
+    try {
+      localStorage.setItem('decap-cms-auth', JSON.stringify({
+        token:    '${token}',
+        provider: '${provider}',
+        ts:       ${Date.now()}
+      }));
+      window.location.replace('${siteUrl}/admin/');
+    } catch(e) {
+      document.body.innerHTML =
+        '<p style="font-family:system-ui;text-align:center;margin-top:4rem;color:red">' +
+        'Storage blocked. Please enable cookies/storage for this site.</p>';
     }
   })();
 <\/script>
