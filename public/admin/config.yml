@@ -2,8 +2,8 @@ backend:
   name: github
   repo: StarykingTBL/the-daily-algorithm
   branch: main
-  base_url: https://the-daily-algorithm.vercel.app
-  auth_endpoint: api/auth
+  auth_type: implicit
+  app_id: Ov23lih2FcpzGEUAFncb
 
 media_folder: "public/images/blog"
 public_folder: "/images/blog"
