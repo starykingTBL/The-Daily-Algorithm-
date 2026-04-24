@@ -32,6 +32,7 @@ export default async function handler(req, res) {
 
     const token    = tokenData.access_token;
     const provider = 'github';
+    const siteUrl  = process.env.SITE_URL;
 
     const html = `
 <!doctype html>
@@ -43,32 +44,44 @@ export default async function handler(req, res) {
 </p>
 <script>
   (function () {
-    function sendToken() {
-      var message = JSON.stringify({
-        token:    "${token}",
-        provider: "${provider}"
-      });
+    var token    = "${token}";
+    var provider = "${provider}";
+    var siteUrl  = "${siteUrl}";
+
+    var message = "authorization:" + provider + ":success:"
+      + JSON.stringify({ token: token, provider: provider });
+
+    // Method 1: postMessage to opener (desktop browsers)
+    function tryOpener() {
       if (window.opener) {
-        window.opener.postMessage(
-          "authorization:${provider}:success:" + message,
-          "${process.env.SITE_URL}"
-        );
+        window.opener.postMessage("authorizing:" + provider, "*");
+        setTimeout(function () {
+          window.opener.postMessage(message, siteUrl);
+          setTimeout(function () { window.close(); }, 500);
+        }, 300);
+        return true;
+      }
+      return false;
+    }
+
+    // Method 2: localStorage + redirect (mobile browsers)
+    function tryLocalStorage() {
+      try {
+        localStorage.setItem("decap-cms-auth", JSON.stringify({
+          token:    token,
+          provider: provider,
+          ts:       Date.now()
+        }));
+        window.location.href = siteUrl + "/admin/";
+      } catch (e) {
+        document.body.innerHTML =
+          "<p style='font-family:system-ui;text-align:center;margin-top:4rem;color:red'>" +
+          "Auth failed. Please try again.</p>";
       }
     }
 
-    window.addEventListener("message", function (e) {
-      if (e.data === "authorizing:${provider}") {
-        sendToken();
-      }
-    }, false);
-
-    if (window.opener) {
-      window.opener.postMessage("authorizing:${provider}", "*");
-      setTimeout(sendToken, 500);
-    } else {
-      document.body.innerHTML =
-        "<p style='font-family:system-ui;text-align:center;margin-top:4rem'>"+
-        "Auth complete. You can close this tab and return to the CMS.</p>";
+    if (!tryOpener()) {
+      tryLocalStorage();
     }
   })();
 <\/script>
