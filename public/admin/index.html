@@ -6,6 +6,32 @@
     <title>Admin — The Daily Algorithm</title>
   </head>
   <body>
+    <script>
+      // Pick up token from localStorage (mobile OAuth flow)
+      (function () {
+        try {
+          var raw = localStorage.getItem("decap-cms-auth");
+          if (raw) {
+            var data = JSON.parse(raw);
+            // Only use if token is fresh (under 5 minutes old)
+            if (data.token && (Date.now() - data.ts) < 300000) {
+              localStorage.removeItem("decap-cms-auth");
+              var message = "authorization:" + data.provider + ":success:"
+                + JSON.stringify({ token: data.token, provider: data.provider });
+              // Re-dispatch as if it came from a popup
+              window.addEventListener("load", function () {
+                setTimeout(function () {
+                  window.dispatchEvent(new MessageEvent("message", {
+                    data:   message,
+                    origin: window.location.origin
+                  }));
+                }, 1000);
+              });
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
     <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
   </body>
 </html>
