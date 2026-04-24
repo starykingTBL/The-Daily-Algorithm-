@@ -1,10 +1,8 @@
-const https = require('https');
-
-module.exports = function handler(req, res) {
+export default async function handler(req, res) {
   const code     = req.query && req.query.code;
-  const siteUrl  = process.env.SITE_URL  || 'https://the-daily-algorithm.vercel.app';
   const clientId = process.env.GITHUB_CLIENT_ID;
   const secret   = process.env.GITHUB_CLIENT_SECRET;
+  const siteUrl  = process.env.SITE_URL;
 
   if (!code) {
     res.status(400).send('Missing code');
@@ -12,48 +10,36 @@ module.exports = function handler(req, res) {
   }
 
   if (!clientId || !secret) {
-    res.status(500).send('Missing env vars: GITHUB_CLIENT_ID or GITHUB_CLIENT_SECRET');
+    res.status(500).send('Missing GITHUB_CLIENT_ID or GITHUB_CLIENT_SECRET in Vercel env vars');
     return;
   }
 
-  const body = JSON.stringify({ client_id: clientId, client_secret: secret, code: code });
-
-  const options = {
-    hostname: 'github.com',
-    path:     '/login/oauth/access_token',
-    method:   'POST',
-    headers:  {
-      'Content-Type':   'application/json',
-      'Accept':         'application/json',
-      'Content-Length': Buffer.byteLength(body),
-    },
-  };
-
-  const request = https.request(options, function (response) {
-    let data = '';
-    response.on('data', function (chunk) { data += chunk; });
-    response.on('end', function () {
-      let parsed;
-      try { parsed = JSON.parse(data); } catch (e) {
-        res.status(500).send('Bad response from GitHub: ' + data);
-        return;
-      }
-
-      if (!parsed.access_token) {
-        res.status(400).send('No token: ' + JSON.stringify(parsed));
-        return;
-      }
-
-      res.redirect(302,
-        siteUrl + '/admin/#access_token=' + parsed.access_token + '&token_type=bearer&provider=github'
-      );
+  try {
+    const response = await fetch('https://github.com/login/oauth/access_token', {
+      method:  'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept':       'application/json',
+      },
+      body: JSON.stringify({
+        client_id:     clientId,
+        client_secret: secret,
+        code:          code,
+      }),
     });
-  });
 
-  request.on('error', function (err) {
-    res.status(500).send('Request error: ' + err.message);
-  });
+    const data = await response.json();
 
-  request.write(body);
-  request.end();
-};
+    if (!data.access_token) {
+      res.status(400).send('No token returned: ' + JSON.stringify(data));
+      return;
+    }
+
+    res.redirect(302,
+      siteUrl + '/admin/#access_token=' + data.access_token + '&token_type=bearer&provider=github'
+    );
+
+  } catch (err) {
+    res.status(500).send('Fetch error: ' + err.message);
+  }
+}
