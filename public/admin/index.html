@@ -6,33 +6,6 @@
   <title>Admin — The Daily Algorithm</title>
 </head>
 <body>
-<script>
-  // Runs before Decap loads.
-  // If /api/callback redirected here with #access_token=..., grab it
-  // and write it into the localStorage key Decap reads on startup.
-  (function () {
-    try {
-      var hash = window.location.hash;
-      if (hash && hash.indexOf('access_token=') !== -1) {
-        var params  = new URLSearchParams(hash.substring(1));
-        var token   = params.get('access_token');
-        var provider = params.get('provider') || 'github';
-        if (token) {
-          localStorage.setItem('netlify-cms-user', JSON.stringify({
-            token:    token,
-            provider: provider
-          }));
-          // Clean the hash so Decap doesn't get confused
-          history.replaceState(null, '', window.location.pathname);
-        }
-      }
-    } catch (e) {
-      console.error('Auth init error:', e);
-    }
-  })();
-</script>
-
-<!-- Decap loads AFTER the token is already in localStorage -->
-<script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+  <script src="https://unpkg.com/@sveltia/cms/dist/sveltia-cms.js"></script>
 </body>
 </html>
