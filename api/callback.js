@@ -30,41 +30,15 @@ export default async function handler(req, res) {
       );
     }
 
-    const token    = tokenData.access_token;
-    const provider = 'github';
-    const siteUrl  = process.env.SITE_URL;
+    // Redirect to /admin/ with token in the URL hash
+    // Decap reads window.location.hash natively
+    const siteUrl = process.env.SITE_URL;
+    const token   = tokenData.access_token;
 
-    // Store token in localStorage then redirect to /admin/
-    const html = `<!doctype html>
-<html>
-<head><title>Authenticating…</title></head>
-<body>
-<p style="font-family:system-ui;font-size:14px;text-align:center;margin-top:4rem;color:#666">
-  Logging you in…
-</p>
-<script>
-  (function() {
-    try {
-      localStorage.setItem('decap-cms-auth', JSON.stringify({
-        token:    '${token}',
-        provider: '${provider}',
-        ts:       ${Date.now()}
-      }));
-      window.location.replace('${siteUrl}/admin/');
-    } catch(e) {
-      document.body.innerHTML =
-        '<p style="font-family:system-ui;text-align:center;margin-top:4rem;color:red">' +
-        'Storage blocked. Please enable cookies/storage for this site.</p>';
-    }
-  })();
-<\/script>
-</body>
-</html>`;
-
-    res.setHeader('Content-Type', 'text/html');
-    return res.send(html);
+    return res.redirect(302,
+      `${siteUrl}/admin/#access_token=${token}&token_type=bearer&provider=github`
+    );
 
   } catch (err) {
     return res.status(500).send(`Server error: ${err.message}`);
   }
-}
