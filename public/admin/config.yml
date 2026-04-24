@@ -3,7 +3,7 @@ backend:
   repo: StarykingTBL/the-daily-algorithm
   branch: main
   base_url: https://the-daily-algorithm.vercel.app
-  auth_endpoint: /api/auth
+  auth_endpoint: api/auth
 
 media_folder: "public/images/blog"
 public_folder: "/images/blog"
@@ -15,11 +15,11 @@ collections:
     create: true
     slug: "{{slug}}"
     fields:
-      - { label: "Title",          name: "title",       widget: "string"                              }
-      - { label: "Description",    name: "description", widget: "text"                                }
-      - { label: "Publish Date",   name: "pubDate",     widget: "datetime"                            }
+      - { label: "Title",          name: "title",       widget: "string"                               }
+      - { label: "Description",    name: "description", widget: "text"                                 }
+      - { label: "Publish Date",   name: "pubDate",     widget: "datetime"                             }
       - { label: "Author",         name: "author",      widget: "string",  default: "The Daily Algorithm" }
-      - { label: "Tags",           name: "tags",        widget: "list",    default: []                }
-      - { label: "Featured Image", name: "image",       widget: "image",   required: false            }
-      - { label: "Draft",          name: "draft",       widget: "boolean", default: false             }
-      - { label: "Body",           name: "body",        widget: "markdown"                            }
+      - { label: "Tags",           name: "tags",        widget: "list",    default: []                 }
+      - { label: "Featured Image", name: "image",       widget: "image",   required: false             }
+      - { label: "Draft",          name: "draft",       widget: "boolean", default: false              }
+      - { label: "Body",           name: "body",        widget: "markdown"                             }
