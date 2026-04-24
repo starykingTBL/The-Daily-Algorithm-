@@ -1,64 +1,59 @@
 const https = require('https');
 
-module.exports = async function handler(req, res) {
-  const { code } = req.query;
+module.exports = function handler(req, res) {
+  const code     = req.query && req.query.code;
+  const siteUrl  = process.env.SITE_URL  || 'https://the-daily-algorithm.vercel.app';
+  const clientId = process.env.GITHUB_CLIENT_ID;
+  const secret   = process.env.GITHUB_CLIENT_SECRET;
 
   if (!code) {
-    return res.status(400).send('Missing authorization code.');
+    res.status(400).send('Missing code');
+    return;
   }
 
-  try {
-    const token = await getToken(code);
-
-    const siteUrl = process.env.SITE_URL;
-
-    return res.redirect(302,
-      `${siteUrl}/admin/#access_token=${token}&token_type=bearer&provider=github`
-    );
-
-  } catch (err) {
-    return res.status(500).send(`Error: ${err.message}`);
+  if (!clientId || !secret) {
+    res.status(500).send('Missing env vars: GITHUB_CLIENT_ID or GITHUB_CLIENT_SECRET');
+    return;
   }
-};
 
-function getToken(code) {
-  return new Promise((resolve, reject) => {
-    const body = JSON.stringify({
-      client_id:     process.env.GITHUB_CLIENT_ID,
-      client_secret: process.env.GITHUB_CLIENT_SECRET,
-      code,
+  const body = JSON.stringify({ client_id: clientId, client_secret: secret, code: code });
+
+  const options = {
+    hostname: 'github.com',
+    path:     '/login/oauth/access_token',
+    method:   'POST',
+    headers:  {
+      'Content-Type':   'application/json',
+      'Accept':         'application/json',
+      'Content-Length': Buffer.byteLength(body),
+    },
+  };
+
+  const request = https.request(options, function (response) {
+    let data = '';
+    response.on('data', function (chunk) { data += chunk; });
+    response.on('end', function () {
+      let parsed;
+      try { parsed = JSON.parse(data); } catch (e) {
+        res.status(500).send('Bad response from GitHub: ' + data);
+        return;
+      }
+
+      if (!parsed.access_token) {
+        res.status(400).send('No token: ' + JSON.stringify(parsed));
+        return;
+      }
+
+      res.redirect(302,
+        siteUrl + '/admin/#access_token=' + parsed.access_token + '&token_type=bearer&provider=github'
+      );
     });
-
-    const options = {
-      hostname: 'github.com',
-      path:     '/login/oauth/access_token',
-      method:   'POST',
-      headers:  {
-        'Content-Type':   'application/json',
-        'Accept':         'application/json',
-        'Content-Length': Buffer.byteLength(body),
-      },
-    };
-
-    const request = https.request(options, (response) => {
-      let data = '';
-      response.on('data', chunk => { data += chunk; });
-      response.on('end', () => {
-        try {
-          const parsed = JSON.parse(data);
-          if (parsed.error || !parsed.access_token) {
-            reject(new Error(parsed.error_description || 'No token returned'));
-          } else {
-            resolve(parsed.access_token);
-          }
-        } catch (e) {
-          reject(new Error('Failed to parse GitHub response'));
-        }
-      });
-    });
-
-    request.on('error', reject);
-    request.write(body);
-    request.end();
   });
-}
+
+  request.on('error', function (err) {
+    res.status(500).send('Request error: ' + err.message);
+  });
+
+  request.write(body);
+  request.end();
+};
