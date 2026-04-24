@@ -6,35 +6,6 @@
     <title>Admin — The Daily Algorithm</title>
   </head>
   <body>
-    <script>
-      (function () {
-        try {
-          var raw = localStorage.getItem("decap-cms-auth");
-          if (raw) {
-            var data = JSON.parse(raw);
-            if (data.token && (Date.now() - data.ts) < 300000) {
-              localStorage.removeItem("decap-cms-auth");
-              // Simulate the postMessage Decap expects from a popup
-              var provider = data.provider;
-              var token    = data.token;
-              var send = function () {
-                window.postMessage(
-                  "authorization:" + provider + ":success:"
-                  + JSON.stringify({ token: token, provider: provider }),
-                  window.location.origin
-                );
-              };
-              // Wait for Decap to fully load before sending
-              document.addEventListener("DOMContentLoaded", function () {
-                setTimeout(send, 2000);
-              });
-            }
-          }
-        } catch (e) {
-          console.error("Auth pickup error:", e);
-        }
-      })();
-    </script>
     <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
   </body>
 </html>
