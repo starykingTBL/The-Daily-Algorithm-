@@ -15,8 +15,8 @@ export default async function handler(req, res) {
           'Accept':       'application/json',
         },
         body: JSON.stringify({
-          client_id:     process.env.Ov23lih2FcpzGEUAFncb,
-          client_secret: process.env.9a4782fee1e66daa921c139a9a979fb7ffc04c61,
+          client_id:     process.env.GITHUB_CLIENT_ID,
+          client_secret: process.env.GITHUB_CLIENT_SECRET,
           code,
         }),
       }
@@ -33,7 +33,6 @@ export default async function handler(req, res) {
     const token    = tokenData.access_token;
     const provider = 'github';
 
-    // This page sends the token back to Decap CMS via postMessage
     const html = `
 <!doctype html>
 <html>
@@ -44,7 +43,6 @@ export default async function handler(req, res) {
 </p>
 <script>
   (function () {
-    // Send token to the opener (Decap CMS window)
     function sendToken() {
       var message = JSON.stringify({
         token:    "${token}",
@@ -58,14 +56,12 @@ export default async function handler(req, res) {
       }
     }
 
-    // Decap sends a "ping" first, we reply with the token
     window.addEventListener("message", function (e) {
       if (e.data === "authorizing:${provider}") {
         sendToken();
       }
     }, false);
 
-    // Also try immediately in case the ping already came
     if (window.opener) {
       window.opener.postMessage("authorizing:${provider}", "*");
       setTimeout(sendToken, 500);
