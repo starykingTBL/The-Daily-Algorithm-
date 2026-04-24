@@ -15,7 +15,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         client_id:     process.env.Ov23lih2FcpzGEUAFncb,
-        client_secret: process.env.4ecc3dc460c0cc6ebbdc53a3739626d223662226,
+        client_secret: process.env.6bd7db75fc69fc970efa3b17d067298d8b32e5cb,
         code,
       }),
     }
